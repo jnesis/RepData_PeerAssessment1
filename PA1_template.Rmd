@@ -7,19 +7,61 @@ output:
 
 
 ## Loading and preprocessing the data
+The following code downloads the source file, unzips and loads the data into variable *stepData*.
 
+```{r, echo = TRUE}
+if (!file.exists("activity.zip")) {
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", "activity.zip", method = "curl")
+  unzip("activity.zip")
+}
+
+stepData <- read.csv("activity.csv", header = TRUE, sep = ",")
+stepData$date <- as.Date(stepData$date)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+The following code calculates the total number of steps taken per day. The value will be 0 if the data is not available for specific date.
 
+```{r, echo = TRUE}
+totalStepsPerDay <- aggregate(stepData$steps, by=list(stepData$date), FUN = sum, na.rm = TRUE)
+
+colnames(totalStepsPerDay) <- c("date", "steps")
+totalStepsPerDay
+
+library(ggplot2)
+qplot(date, steps, data=totalStepsPerDay, geom="line") + theme(aspect.ratio = 1/4)
+```
 
 ## What is the average daily activity pattern?
 
+Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
+```{r, echo=TRUE}
+intervalAverage <- aggregate(steps~date+interval, stepData, mean, na.rm = TRUE)
+plot(intervalAverage$interval, intervalAverage$steps, type = "l")
+```
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r, echo=TRUE}
+intervalAverage[max(intervalAverage$steps),]
+```
 
 ## Imputing missing values
 
+1) Total number of missing values
+```{r, echo=TRUE}
+sum(is.na(stepData$steps))
+```
 
-
-## Are there differences in activity patterns between weekdays and weekends?
+2) Fill in all of the missing values in the dataset
+```{r, echo=TRUE}
+f=function(x){
+   x<-as.numeric(x)
+   x[is.na(x)]=median(x, na.rm=TRUE) 
+   x #display the column
+}
+# ss=data.frame(apply(stepData,1,f))
+```
